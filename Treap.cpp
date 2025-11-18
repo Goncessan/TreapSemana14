@@ -71,26 +71,18 @@ Nodo* rotarDerecha(Nodo* y){
 
 Nodo* insertar(Nodo* n, int pid, int prioridad, int tiempo){
     if(n == nullptr){
-        Nodo* nNew = new Nodo(pid, prioridad, tiempo);
-        nNew->pid = pid;
-        nNew->prioridad = prioridad;
-        nNew->tiempo = tiempo;
-        nNew->prioridadHeap = rand();
-        nNew->size = 1;
-        nNew->sumTime = tiempo;
-        
-        return nNew;
+        return new Nodo(pid, prioridad, tiempo);
     }
     
     if(prioridad < n->prioridad){
         n->izq = insertar(n->izq, pid, prioridad, tiempo);
         if(n->izq->prioridadHeap > n->prioridadHeap){
-            rotarDerecha(n);
+            n = rotarDerecha(n);
         }
     }else{
         n->der = insertar(n->der, pid, prioridad, tiempo);
         if(n->der->prioridadHeap > n->prioridadHeap){
-            rotarIzquierda(n);
+            n = rotarIzquierda(n);
         }
     }
     
@@ -98,11 +90,67 @@ Nodo* insertar(Nodo* n, int pid, int prioridad, int tiempo){
     return n;
 }
 
+int contarMenor(Nodo* n, int p){ //p = prioridad
+    if(n == nullptr)
+        return 0;
+    if(n->prioridad >= p)
+        return contarMenor(n->izq, p);
+    else
+        return 1 + tamaño(n->izq) + contarMenor(n->der, p);
+}
+
+int sumaEnRango(Nodo* n, int p1, int p2){
+    if(n == nullptr)
+        return 0;
+
+    if(n->prioridad < p1)
+        return sumaEnRango(n->der, p1, p2);
+    if(n->prioridad > p2)
+        return sumaEnRango(n->izq, p1, p2);
+
+    int retorno = n->tiempo;
+    retorno += sumaEnRango(n->izq, p1, p2);
+    retorno += sumaEnRango(n->der, p1, p2);
+
+    return retorno;
+}
+
+long menorTiempoEnRango(Nodo* n, int p1, int p2){
+    if (n == nullptr)
+        return LONG_MAX;
+    
+    long menorTiempo = LONG_MAX;
+
+    if(p1 <= n->prioridad && n->prioridad <= p2){
+        menorTiempo = n->tiempo;
+    }
+
+    long menorIzq = menorTiempoEnRango(n->izq, p1, p2);
+    long menorDer = menorTiempoEnRango(n->der, p1, p2);
+
+    return min(menorTiempo, min(menorIzq, menorDer));
+}
+
+void imprimirInOrden(Nodo* n){
+    if(n == nullptr)
+        return;
+    imprimirInOrden(n->izq);
+    cout << "PID: " << n->pid << ", Prioridad: " << n->prioridad << ", Tiempo: " << n->tiempo << endl;
+    cout << "Tamaño Subárbol: " << n->size << ", Suma Tiempos Subárbol: " << n->sumTime << endl;
+    imprimirInOrden(n->der);
+}
 
 int main()
-
 {
-    cout<<"Hello World" << endl;
+    Nodo* raiz = nullptr;
+    raiz = insertar(raiz, 101, 15, 120);
+    raiz = insertar(raiz, 102, 10, 80);
+    raiz = insertar(raiz, 103, 20, 60);
+    //agregar más xd
+    imprimirInOrden(raiz);
+    cout << "Procesos con prioridad menor a 18: " << contarMenor(raiz, 18) << endl;
+    cout << "Suma de tiempos en rango de prioridades [10, 20]: " << sumaEnRango(raiz, 10, 20) << endl;
+    cout << "Menor tiempo en rango de prioridades [10, 15]: " << menorTiempoEnRango(raiz, 10, 15) << endl;
 
     return 0;
 }
